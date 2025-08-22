@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Unified Project Hub · Pure HTML + Kanban (Optimized)</title>
+  <style>
+    :root{
+      --bg:#f6f7f9; --card:#fff; --text:#111; --muted:#6b7280; --border:#e5e7eb;
+      --primary:#111827; --accent:#2563eb; --danger:#dc2626; --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji; background:var(--bg); color:var(--text)}
+    .container{max-width:1200px;margin:0 auto;padding:16px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:900px){.grid{grid-template-columns:340px 1fr}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+    .card-h{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .card-c{padding:16px}
+    .title{font-size:18px;font-weight:700}
+    .muted{color:var(--muted);font-size:12px}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .col{display:flex;flex-direction:column;gap:8px}
+    .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:#fff;height:34px;padding:0 12px;border-radius:10px;cursor:pointer;white-space:nowrap}
+    .btn.small{height:28px;padding:0 8px;border-radius:8px;font-size:12px}
+    .btn.icon{height:28px;width:28px;justify-content:center;padding:0}
+    .btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .btn.secondary{background:#f3f4f6}
+    .btn.danger{background:#fee2e2;border-color:#fecaca;color:#991b1b}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .input, textarea, select{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:#fff;font-size:14px}
+    textarea{resize:vertical}
+    .viewtabs{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+    .viewtabs .tabbtn{padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:#f3f4f6;cursor:pointer}
+    .viewtabs .tabbtn.active{background:#fff;border-color:#111}
+    .list{max-height:60vh;overflow:auto;display:flex;flex-direction:column;gap:10px;padding-right:6px}
+    .item{border:1px solid var(--border);border-radius:14px;background:#fff;padding:12px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+    .item.active{border-color:#111}
+    .item .left{min-width:0;flex:1}
+    .badge{font-size:11px;padding:4px 10px;border-radius:999px;background:#f3f4f6;border:1px solid var(--border)}
+    .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .progress{height:8px;background:#eef2f7;border-radius:999px;overflow:hidden;margin-top:6px}
+    .progress>span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#60a5fa);width:0}
+    .rightCol{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:140px}
+    .rightCol .actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+    .grid2{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:900px){.grid2{grid-template-columns:1fr 1fr}}
+    .tabs{display:flex;gap:8px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+    .tab{padding:8px 12px;border:1px solid var(--border);border-bottom:none;border-radius:10px 10px 0 0;background:#f9fafb;cursor:pointer}
+    .tab.active{background:#fff}
+    .hidden{display:none}
+    .drop{position:relative}
+    .menu{position:absolute;right:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.08);min-width:200px;display:none;z-index:10}
+    .menu.open{display:block}
+    .menu button,.menu label{display:flex;width:100%;gap:8px;align-items:center;padding:10px 12px;background:#fff;border:0;border-bottom:1px solid var(--border);cursor:pointer}
+    .menu button:last-child{border-bottom:none}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border:1px dashed var(--border);border-radius:999px}
+    .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .chip{font-size:12px;color:#374151}
+    .footer{font-size:12px;color:#6b7280;text-align:center;margin:12px auto 24px}
+    .sheet{position:fixed;inset:0;display:none}
+    .sheet.open{display:block}
+    .sheet .back{position:absolute;inset:0;background:rgba(0,0,0,.2)}
+    .sheet .panel{position:absolute;left:0;top:0;bottom:0;width:320px;background:#fff;border-right:1px solid var(--border);padding:12px;overflow:auto}
+    .switch{inline-size:40px;block-size:22px;background:#e5e7eb;border-radius:999px;position:relative;cursor:pointer}
+    .switch[data-on="1"]{background:#111827}
+    .switch .dot{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:999px;background:#fff;transition:transform .15s ease}
+    .switch[data-on="1"] .dot{transform:translateX(18px)}
+    .toast{position:fixed;right:16px;bottom:16px;background:#111;color:#fff;padding:10px 12px;border-radius:10px;opacity:0;transform:translateY(8px);transition:all .2s}
+    .toast.show{opacity:1;transform:none}
+    /* Kanban */
+    .kanban{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:900px){.kanban{grid-template-columns:repeat(4,1fr)}}
+    @media(min-width:1200px){.kanban{grid-template-columns:repeat(7,1fr)}}
+    .colhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .kcol{background:#fff;border:1px dashed var(--border);border-radius:14px;padding:10px;min-height:160px}
+    .kcard{border:1px solid var(--border);border-radius:12px;background:#fff;padding:10px;margin-bottom:8px;cursor:grab}
+    .kcard.drag{opacity:.6}
+    .krow{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+    .kname{font-weight:600;overflow:hidden;word-break:break-word;white-space:normal;line-height:1.3}
+    .kactions{display:flex;gap:6px;flex-wrap:wrap}
+    .kcol.over{background:#f3f4f6}
+    .link{color:#2563eb;text-decoration:none}
+    /* Title wrapping in list too */
+    .item .kname{word-break:break-word;white-space:normal;line-height:1.3}
+    /* Better scrollbars spacing */
+    .list{scrollbar-gutter:stable both-edges}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="grid" id="app">
+      <!-- Left: Project List / Kanban -->
+      <div class="card">
+        <div class="card-h">
+          <div class="row"><div class="title" id="t_projects">项目列表</div></div>
+          <div class="right">
+            <button class="btn secondary" id="btnAdd">＋ <span id="t_add">新增</span></button>
+            <div class="drop">
+              <button class="btn" id="btnMore">☰ <span id="t_more">更多</span></button>
+              <div class="menu" id="menu">
+                <button id="btnExport">⬇️ <span id="t_export">导出 JSON</span></button>
+                <label>⬆️ <span id="t_import">导入 JSON</span>
+                  <input type="file" id="fileImport" accept="application/json" hidden>
+                </label>
+                <button id="btnReset">♻️ <span id="t_reset">恢复演示数据</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-c">
+          <div class="viewtabs">
+            <button class="tabbtn active" id="btnViewList">📃 列表</button>
+            <button class="tabbtn" id="btnViewKanban">🗂️ 看板</button>
+          </div>
+          <div class="row" style="position:relative">
+            <span style="position:absolute;left:12px;top:10px;color:#9ca3af">🔎</span>
+            <input class="input" style="padding-left:32px" id="search" placeholder="搜索名称、负责人、标签…">
+          </div>
+          <div class="list" id="list"></div>
+          <div id="kanbanWrap" class="hidden">
+            <div class="kanban" id="kanban"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Details + Prompt -->
+      <div class="col" style="gap:16px">
+        <div class="card">
+          <div class="card-h">
+            <div>
+              <div class="title" id="t_details">项目详情</div>
+              <div class="muted" id="t_hint">点击左侧“编辑”进入编辑；点击项目标题会在新标签打开项目链接</div>
+            </div>
+            <div class="right">
+              <div class="chip">EN</div>
+              <div class="switch" id="switchLang" aria-label="Language toggle" data-on="1"><div class="dot"></div></div>
+              <div class="chip" id="chipLang">中文</div>
+              <div class="pill">💾 <span id="t_autosave">自动保存</span></div>
+              <button class="btn danger" id="btnDelete">🗑️ <span id="t_delete">删除项目</span></button>
+            </div>
+          </div>
+          <div class="card-c">
+            <div id="empty" class="muted">暂无选中项目</div>
+            <div id="detail" class="grid2 hidden">
+              <div class="col">
+                <label><span id="l_name">项目名称</span>
+                  <input class="input" id="f_name"></label>
+                <label><span id="l_owner">负责人</span>
+                  <input class="input" id="f_owner"></label>
+                <label><span id="l_template">模板类型（看板/自定义）</span>
+                  <input class="input" id="f_template"></label>
+                <label><span id="l_stage">阶段</span>
+                  <input class="input" id="f_stage" list="stages"></label>
+                  <datalist id="stages">
+                    <option>Discovery</option><option>Design</option><option>Prototype</option>
+                    <option>Development</option><option>Testing</option><option>Launch</option><option>Maintenance</option>
+                  </datalist>
+                <label><span id="l_due">截止日期</span>
+                  <input class="input" type="date" id="f_due"></label>
+                <label><span id="l_tags">标签（逗号分隔）</span>
+                  <input class="input" id="f_tags"></label>
+                <label><span id="l_desc">项目描述</span>
+                  <textarea class="input" rows="4" id="f_desc"></textarea></label>
+              </div>
+              <div class="col">
+                <label><span id="l_completion">完成度（可手动输入或拖动）</span></label>
+                <div class="row">
+                  <input class="input" id="f_completion_num" type="number" min="0" max="100" style="width:84px">
+                  <input id="f_completion_rng" type="range" min="0" max="100" step="1" style="flex:1">
+                  <span class="badge" id="badgePct">0%</span>
+                </div>
+                <div class="progress"><span id="bar" style="width:0%"></span></div>
+                <label><span id="l_risks">风险（一行一项）</span>
+                  <textarea class="input" rows="3" id="f_risks"></textarea></label>
+                <label><span id="l_milestones">里程碑（一行一项）</span>
+                  <textarea class="input" rows="3" id="f_milestones"></textarea></label>
+                <label><span id="l_links">相关链接（标题|URL，每行一项）</span>
+                  <textarea class="input" rows="3" id="f_links"></textarea></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <div class="title" id="t_prompt">AI 辅助开发 Prompt 生成器</div>
+            <div class="right">
+              <button class="btn primary" id="btnGen">⚙️ <span id="t_gen">生成 Prompt</span></button>
+              <button class="btn" id="btnCopy">📋 <span id="t_copy">复制</span></button>
+            </div>
+          </div>
+          <div class="card-c">
+            <div class="tabs">
+              <button class="tab active" data-tab="cfg" id="tabCfg">配置</button>
+              <button class="tab" data-tab="prev" id="tabPrev">预览</button>
+              <button class="tab" data-tab="how" id="tabHow">用法</button>
+            </div>
+            <div id="paneCfg" style="padding:12px 0" class="col">
+              <label><span id="l_ask">你想让 AI 做什么？</span>
+                <textarea class="input" rows="3" id="f_ask">生成下周执行计划（含风险、人员、交付物、验收标准）/ Generate next-week execution plan with risks, owners, deliverables, acceptance.</textarea></label>
+              <label class="row" style="gap:10px"><input type="checkbox" id="f_check" checked>
+                <span id="l_check">包含详细清单/检查表</span></label>
+              <div class="muted" id="tip">提示：Prompt 将自动带入项目名称、阶段、完成度、风险、里程碑等信息。</div>
+            </div>
+            <div id="panePrev" class="hidden" style="padding:12px 0">
+              <textarea class="input" rows="12" id="f_prompt" placeholder="点击‘生成 Prompt’即可预览"></textarea>
+            </div>
+            <div id="paneHow" class="hidden" style="padding:12px 0">
+              <ol style="padding-left:18px;line-height:1.7">
+                <li id="h1">左侧点击项目标题即可进入链接；点“编辑”进详情。</li>
+                <li id="h2">详情中手动输入或拖动完成度滑块。</li>
+                <li id="h3">在下方“AI Prompt”区选择配置并点击“生成 Prompt”。</li>
+                <li id="h4">复制 Prompt，粘贴到你的 AI 工具（如 ChatGPT/DeepSeek）。</li>
+                <li id="h5">使用右上角菜单导出/导入 JSON 以在团队之间同步。</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn secondary" id="btnOpenSheet">📂 在手机上展开项目列表</button>
+      </div>
+    </div>
+
+    <div class="footer">统一界面示例 · 本地保存 · 可导入导出 · 看板+删除 · 点击进入链接</div>
+  </div>
+
+  <!-- Mobile Sheet -->
+  <div class="sheet" id="sheet">
+    <div class="back" id="sheetBack"></div>
+    <div class="panel">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>项目列表</strong>
+        <button class="btn" id="btnCloseSheet">关闭</button>
+      </div>
+      <div id="sheetList"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">已复制到剪贴板</div>
+
+<script>
+/** @typedef {{label:string,url:string}} Link */
+/** @typedef {{id:string,name:string,owner?:string,stage?:string,templateType?:string,completion:number,dueDate?:string,tags:string[],description?:string,risks?:string[],milestones?:string[],links?:Link[]}} Project */
+
+const LS_KEY = 'unified_project_hub_html_v2_opt';
+let projects = [];
+let selectedId = null;
+let isZh = true;
+let includeChecklists = true;
+let viewMode = 'list';
+
+const demo = () => ([
+  {id: uid(), name:'Leather Defect AI – Dual Beam Inkjet', owner:'PM: Rocky', stage:'Development', templateType:'Kanban-ProdOps', completion:42, dueDate:isoDate(30), tags:['AI','Vision','Manufacturing'], description:'Unified flow for scanning → defect analysis → dual-beam marking → QA.', risks:['Dust/static interference','Ink adhesion on wet-blue'], milestones:['Prototype M12 housing','POE harness','Dual-nozzle sync'], links:[{label:'Spec',url:'#'}]},
+  {id: uid(), name:'Elderly Vital Signs Radar – SNF Pilot', owner:'PM: Luoxi', stage:'Prototype', templateType:'Kanban-HealthTech', completion:65, dueDate:isoDate(45), tags:['Radar','Healthcare'], description:'Bedside mmWave radar vitals monitoring; SNF trial rooms 101-110.', risks:['False positives due to fan/AC','Caregiver adoption'], milestones:['Pilot consent forms','BLE gateway test'], links:[{label:'Trial Plan',url:'#'}]},
+  {id: uid(), name:'NVR Edge + MQTT Private Cloud', owner:'PM: XJ', stage:'Testing', templateType:'Kanban-IoT', completion:78, dueDate:isoDate(20), tags:['IoT','MQTT','Edge'], description:'On-prem MQTT broker + OTA pipeline; EU data residency.', risks:['OTA rollback safety','Broker HA'], milestones:['HA cluster','TLS mutual auth'], links:[{label:'Design Doc',url:'#'}]},
+]);
+
+function isoDate(addDays){return new Date(Date.now()+addDays*864e5).toISOString().slice(0,10)}
+function uid(){return Math.random().toString(36).slice(2,10)}
+function load(){try{const raw=localStorage.getItem(LS_KEY); if(!raw){return demo()} const arr=JSON.parse(raw); return Array.isArray(arr)?arr:demo()}catch{return demo()}}
+function save(){localStorage.setItem(LS_KEY, JSON.stringify(projects))}
+
+const el = (id)=>document.getElementById(id);
+const list = el('list');
+const search = el('search');
+const menu = el('menu');
+const badgePct = el('badgePct');
+const bar = el('bar');
+const detail = el('detail');
+const empty = el('empty');
+const toast = el('toast');
+const kanbanWrap = el('kanbanWrap');
+const kanban = el('kanban');
+
+// Fields
+const f_name = el('f_name');
+const f_owner = el('f_owner');
+const f_template = el('f_template');
+const f_stage = el('f_stage');
+const f_due = el('f_due');
+const f_tags = el('f_tags');
+const f_desc = el('f_desc');
+const f_comp_num = el('f_completion_num');
+const f_comp_rng = el('f_completion_rng');
+const f_risks = el('f_risks');
+const f_milestones = el('f_milestones');
+const f_links = el('f_links');
+
+const stages = ['Discovery','Design','Prototype','Development','Testing','Launch','Maintenance'];
+
+function setLangUI(){
+  // simplified for brevity; same text as previous build
+  search.placeholder = isZh? '搜索名称、负责人、标签…' : 'Search name, owner, tags…';
+}
+
+function getPrimaryUrl(p){
+  const u = p?.links?.[0]?.url || ''; const ok = /^(https?:\/\/|\/?)/i.test(u); return ok? u : '';
+}
+
+function renderList(){
+  const q = (search.value||'').trim().toLowerCase();
+  const arr = !q? projects : projects.filter(p => (p.name+ ' '+(p.owner||'')+' '+(p.templateType||'')+' '+(p.stage||'')+' '+(p.description||'')+' '+(p.tags||[]).join(' ')).toLowerCase().includes(q));
+  list.innerHTML = '';
+  arr.forEach(p=>{
+    const row = document.createElement('div'); row.className='item'+(p.id===selectedId?' active':'');
+    const left = document.createElement('div'); left.className='left';
+    const titleLink = document.createElement('a'); titleLink.className='kname link'; titleLink.target='_blank'; titleLink.rel='noopener';
+    const href = getPrimaryUrl(p); titleLink.href = href || '#'; titleLink.textContent = p.name + (href? '' : ' (未设置链接)');
+    left.appendChild(titleLink);
+    const meta = document.createElement('div'); meta.className='muted'; meta.textContent = `${p.owner||''} · ${p.stage||''} · ${p.templateType||''}`; left.appendChild(meta);
+    const badges = document.createElement('div'); badges.className='badges'; badges.innerHTML = (p.tags||[]).map(t=>`<span class='badge'>${escapeHtml(t)}</span>`).join(''); left.appendChild(badges);
+    const prog = document.createElement('div'); prog.className='progress'; prog.innerHTML = `<span style="width:${p.completion}%"></span>`; left.appendChild(prog);
+    row.appendChild(left);
+
+    const right = document.createElement('div'); right.className='rightCol';
+    const pct = document.createElement('div'); pct.className='muted'; pct.textContent = p.completion+'%';
+    const actions = document.createElement('div'); actions.className='actions';
+    const edit = document.createElement('button'); edit.className='btn small'; edit.textContent = '✏️ 编辑'; edit.onclick = ()=>{ selectedId=p.id; renderAll() };
+    const del = document.createElement('button'); del.className='btn small danger'; del.textContent = '🗑️ 删除'; del.onclick = ()=> deleteProject(p.id);
+    actions.appendChild(edit); actions.appendChild(del);
+    right.appendChild(pct); right.appendChild(actions);
+    row.appendChild(right);
+    list.appendChild(row);
+  });
+  if(!arr.length){ const d=document.createElement('div'); d.className='muted'; d.style.cssText='text-align:center;padding:24px 0'; d.textContent='未找到结果'; list.appendChild(d); }
+  // sheet
+  const sheetList = el('sheetList'); if(sheetList){ sheetList.innerHTML=''; arr.forEach(p=>{ const b=document.createElement('div'); b.className='item'; b.innerHTML=`<div><a class='kname link' target='_blank' href='${getPrimaryUrl(p)||'#'}'>${escapeHtml(p.name)}</a><div class='muted'>${escapeHtml(p.owner||'')} · ${escapeHtml(p.stage||'')}</div><div class='progress' style='margin-top:6px'><span style='width:${p.completion}%'></span></div></div>`; const actions=document.createElement('div'); actions.className='kactions'; const edit=document.createElement('button'); edit.className='btn small'; edit.textContent='✏️ 编辑'; edit.onclick=()=>{ selectedId=p.id; closeSheet(); renderAll() }; const del=document.createElement('button'); del.className='btn small danger'; del.textContent='🗑️'; del.onclick=()=> deleteProject(p.id); actions.appendChild(edit); actions.appendChild(del); b.appendChild(actions); sheetList.appendChild(b) }) }
+}
+
+function renderKanban(){
+  kanban.innerHTML='';
+  const q = (search.value||'').trim().toLowerCase();
+  const arr = !q? projects : projects.filter(p => (p.name+ ' '+(p.owner||'')+' '+(p.templateType||'')+' '+(p.stage||'')+' '+(p.description||'')+' '+(p.tags||[]).join(' ')).toLowerCase().includes(q));
+  const stages = ['Discovery','Design','Prototype','Development','Testing','Launch','Maintenance'];
+  stages.forEach(stage=>{
+    const wrap = document.createElement('div');
+    const head = document.createElement('div'); head.className='colhead'; head.innerHTML = `<strong>${stage}</strong><span class='muted'>${arr.filter(p=>p.stage===stage).length}</span>`;
+    const col = document.createElement('div'); col.className='kcol'; col.dataset.stage = stage;
+    col.addEventListener('dragover', (e)=>{ e.preventDefault(); col.classList.add('over') });
+    col.addEventListener('dragleave', ()=> col.classList.remove('over'));
+    col.addEventListener('drop', (e)=>{ e.preventDefault(); col.classList.remove('over'); const id = e.dataTransfer.getData('text/plain'); moveToStage(id, stage) });
+
+    arr.filter(p=>p.stage===stage).forEach(p=>{
+      const card = document.createElement('div'); card.className='kcard'; card.draggable = true; card.dataset.id = p.id;
+      card.addEventListener('dragstart', (e)=>{ card.classList.add('drag'); e.dataTransfer.setData('text/plain', p.id) });
+      card.addEventListener('dragend', ()=> card.classList.remove('drag'));
+
+      const top = document.createElement('div'); top.className='krow';
+      const link = document.createElement('a'); link.className='kname link'; link.href=getPrimaryUrl(p)||'#'; link.target='_blank'; link.textContent=p.name;
+      top.appendChild(link);
+      const acts = document.createElement('div'); acts.className='kactions';
+      const btnEdit = document.createElement('button'); btnEdit.className='btn icon'; btnEdit.title='编辑'; btnEdit.textContent='✏️'; btnEdit.onclick=()=>{ selectedId=p.id; renderAll() };
+      const btnDel = document.createElement('button'); btnDel.className='btn icon danger'; btnDel.title='删除'; btnDel.textContent='🗑️'; btnDel.onclick=()=> deleteProject(p.id);
+      acts.appendChild(btnEdit); acts.appendChild(btnDel); top.appendChild(acts);
+
+      const meta = document.createElement('div'); meta.className='muted'; meta.style.margin='6px 0'; meta.textContent = `${p.owner||''} · ${p.templateType||''}`;
+      const prog = document.createElement('div'); prog.className='progress'; prog.innerHTML = `<span style="width:${p.completion}%"></span>`;
+      const tags = document.createElement('div'); tags.className='badges'; tags.innerHTML=(p.tags||[]).map(t=>`<span class='badge'>${escapeHtml(t)}</span>`).join('');
+
+      card.appendChild(top); card.appendChild(meta); card.appendChild(prog); card.appendChild(tags);
+      col.appendChild(card);
+    });
+    wrap.appendChild(head); wrap.appendChild(col); kanban.appendChild(wrap);
+  });
+}
+
+function moveToStage(id, stage){
+  const idx = projects.findIndex(x=>x.id===id); if(idx<0) return; projects[idx].stage = stage; save(); renderKanban(); renderList(); if(selectedId===id){ f_stage.value = stage }
+}
+
+function renderDetails(){
+  const p = projects.find(x=>x.id===selectedId);
+  if(!p){ empty.classList.remove('hidden'); detail.classList.add('hidden'); return }
+  empty.classList.add('hidden'); detail.classList.remove('hidden');
+  f_name.value=p.name; f_owner.value=p.owner||''; f_template.value=p.templateType||''; f_stage.value=p.stage||''; f_due.value=p.dueDate||''; f_tags.value=(p.tags||[]).join(', '); f_desc.value=p.description||'';
+  f_comp_num.value=p.completion; f_comp_rng.value=p.completion; badgePct && (badgePct.textContent=p.completion+'%'); bar && (bar.style.width=p.completion+'%');
+  f_risks.value=(p.risks||[]).join('\\n'); f_milestones.value=(p.milestones||[]).join('\\n'); f_links.value=(p.links||[]).map(l=>`${l.label}|${l.url}`).join('\\n');
+}
+
+function buildPrompt(p){
+  const ask = el('f_ask').value || '';
+  const links = (p.links||[]).map(l=>`${l.label}: ${l.url}`).join(' | ') || (isZh? '(无)':'(none)');
+  const checkPart = includeChecklists
+    ? (isZh
+      ? '输出：1）风险燃尽方案；2）按周里程碑甘特要点；3）干系人沟通稿；4）测试方案检查表；5）验收标准；6）DRI 与 RACI 摘要；7）未来3个迭代用户故事（INVEST）。'
+      : 'Deliver: 1) risk burndown plan; 2) milestone Gantt bullets (weekly); 3) stakeholder comms draft; 4) test protocol checklist; 5) acceptance criteria; 6) DRI & RACI summary; 7) next 3 sprints user stories (INVEST).')
+    : (isZh? '输出精炼行动计划与待澄清问题。':'Deliver a concise action plan and open questions.');
+
+  if(isZh){
+    return `你是高级产品开发助理。项目：${p.name}。模板：${p.templateType||'N/A'}。阶段：${p.stage||'N/A'}。完成度：${p.completion}% 。负责人：${p.owner||'N/A'}。截止：${p.dueDate||'N/A'}。\n\n背景：\n${p.description||'(暂无描述)'}\n\n标签：${(p.tags||[]).join('、')}\n风险：${(p.risks||[]).join('；')||'(无)'}\n里程碑：${(p.milestones||[]).join('；')||'(无)'}\n链接：${links}\n\n任务：${ask}。\n${checkPart}\n约束：具体且可量化、步骤原子化、贴合当前阶段与完成度，明确假设与未知，以 Markdown 返回。`;
+  } else {
+    return `You are a senior product development copilot. Project: ${p.name}. Template: ${p.templateType||'N/A'}. Stage: ${p.stage||'N/A'}. Completion: ${p.completion}%. Owner: ${p.owner||'N/A'}. Due: ${p.dueDate||'N/A'}.\n\nContext:\n${p.description||'(no description)'}\n\nTags: ${(p.tags||[]).join(', ')}\nRisks: ${(p.risks||[]).join('; ')||'(none)'}\nMilestones: ${(p.milestones||[]).join('; ')||'(none)'}\nLinks: ${links}\n\nTask: ${ask}.\n${checkPart}\nConstraints: be specific, quantify where possible, keep steps atomic, reflect current stage and completion, show assumptions and unknowns. Return in Markdown.`;
+  }
+}
+
+function generatePrompt(){ const p = projects.find(x=>x.id===selectedId); if(!p) return; el('f_prompt').value = buildPrompt(p); activateTab('prev'); }
+function copyPrompt(){ const t = el('f_prompt').value; if(!t) return; navigator.clipboard.writeText(t).then(()=>{ toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),1100) }) }
+
+function updateSelected(changes){ const idx = projects.findIndex(x=>x.id===selectedId); if(idx<0) return; projects[idx] = Object.assign({}, projects[idx], changes); save(); renderList(); renderKanban(); renderDetails(); }
+function deleteProject(id){ const p=projects.find(x=>x.id===id); if(!p) return; if(confirm((isZh?'确认删除：':'Delete: ')+p.name+'?')){ projects = projects.filter(x=>x.id!==p.id); if(selectedId===id){ selectedId = projects[0]?.id||null } save(); renderAll(); } }
+
+window.addEventListener('DOMContentLoaded',()=>{
+  projects = load(); selectedId = projects[0]?.id || null; setLangUI(); renderAll();
+  el('btnAdd').onclick = ()=>{ const p={id:uid(),name:'New Project',owner:'PM: ',stage:'Discovery',templateType:'Kanban-Generic',completion:0,dueDate:new Date().toISOString().slice(0,10),tags:[],description:'',risks:[],milestones:[],links:[]}; projects=[p,...projects]; selectedId=p.id; save(); renderAll(); };
+  el('btnMore').onclick = ()=>{ menu.classList.toggle('open') };
+  document.addEventListener('click',(e)=>{ if(!el('btnMore').contains(e.target) && !menu.contains(e.target)){ menu.classList.remove('open') } });
+  el('btnExport').onclick = ()=>{ const blob=new Blob([JSON.stringify(projects,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='projects_'+new Date().toISOString().slice(0,10)+'.json'; a.click(); URL.revokeObjectURL(url); };
+  el('fileImport').onchange = (ev)=>{ const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const data=JSON.parse(String(r.result)); if(Array.isArray(data)){ projects=data; selectedId=projects[0]?.id||null; save(); renderAll(); } }catch{ alert('Invalid JSON') } }; r.readAsText(f) };
+  el('btnReset').onclick = ()=>{ projects = demo(); selectedId = projects[0]?.id||null; save(); renderAll(); };
+  search.oninput = ()=>{ renderList(); renderKanban(); };
+
+  el('btnViewList').onclick = ()=>{ viewMode='list'; el('btnViewList').classList.add('active'); el('btnViewKanban').classList.remove('active'); list.classList.remove('hidden'); kanbanWrap.classList.add('hidden'); };
+  el('btnViewKanban').onclick = ()=>{ viewMode='kanban'; el('btnViewKanban').classList.add('active'); el('btnViewList').classList.remove('active'); list.classList.add('hidden'); kanbanWrap.classList.remove('hidden'); renderKanban(); };
+
+  f_name.oninput = ()=> updateSelected({name:f_name.value});
+  f_owner.oninput = ()=> updateSelected({owner:f_owner.value});
+  f_template.oninput = ()=> updateSelected({templateType:f_template.value});
+  f_stage.oninput = ()=> updateSelected({stage:f_stage.value});
+  f_due.oninput = ()=> updateSelected({dueDate:f_due.value});
+  f_tags.oninput = ()=> updateSelected({tags:f_tags.value.split(',').map(s=>s.trim()).filter(Boolean)});
+  f_desc.oninput = ()=> updateSelected({description:f_desc.value});
+  f_comp_num.oninput = ()=>{ let v = clamp(+f_comp_num.value,0,100); f_comp_num.value=v; f_comp_rng.value=v; badgePct && (badgePct.textContent=v+'%'); bar && (bar.style.width=v+'%'); updateSelected({completion:v}); };
+  f_comp_rng.oninput = ()=>{ let v = clamp(+f_comp_rng.value,0,100); f_comp_num.value=v; badgePct && (badgePct.textContent=v+'%'); bar && (bar.style.width=v+'%'); updateSelected({completion:v}); };
+  f_risks.oninput = ()=> updateSelected({risks: splitLines(f_risks.value)});
+  f_milestones.oninput = ()=> updateSelected({milestones: splitLines(f_milestones.value)});
+  f_links.oninput = ()=>{ const links = splitLines(f_links.value).map(line=>{ const [label,url] = line.split('|').map(s=>s?.trim()); return {label:label||'Link', url:url||'#'} }); updateSelected({links}) };
+
+  el('btnDelete').onclick = ()=>{ if(!selectedId) return; deleteProject(selectedId) };
+  el('btnGen').onclick = generatePrompt; el('btnCopy').onclick = copyPrompt;
+
+  document.querySelectorAll('.tab').forEach(tab=>{ tab.addEventListener('click',()=> activateTab(tab.dataset.tab)) })
+
+  el('switchLang').onclick = ()=>{ isZh = !isZh; el('switchLang').setAttribute('data-on', isZh? '1':'0'); setLangUI(); renderAll(); }
+
+  el('btnOpenSheet').onclick = openSheet; el('btnCloseSheet').onclick = closeSheet; el('sheetBack').onclick = closeSheet;
+});
+
+function activateTab(key){ document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.tab===key)); el('paneCfg').classList.toggle('hidden', key!=='cfg'); el('panePrev').classList.toggle('hidden', key!=='prev'); el('paneHow').classList.toggle('hidden', key!=='how'); }
+function openSheet(){ el('sheet').classList.add('open') }
+function closeSheet(){ el('sheet').classList.remove('open') }
+function renderAll(){ renderList(); renderKanban(); renderDetails(); }
+function splitLines(s){ return (s||'').split(/\n+/).map(x=>x.trim()).filter(Boolean) }
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v||0)) }
+function escapeHtml(s){ return String(s).replace(/[&<>\"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])) }
+</script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Unified Project Hub · Pure HTML + Kanban (Robust Links)</title>
+  <style>
+    :root{--bg:#f6f7f9;--card:#fff;--text:#111;--muted:#6b7280;--border:#e5e7eb;--primary:#111827;--accent:#2563eb;--danger:#dc2626;--radius:16px}
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji;background:var(--bg);color:var(--text)}
+    .container{max-width:1200px;margin:0 auto;padding:16px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:900px){.grid{grid-template-columns:340px 1fr}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+    .card-h{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .card-c{padding:16px}
+    .title{font-size:18px;font-weight:700}
+    .muted{color:var(--muted);font-size:12px}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .col{display:flex;flex-direction:column;gap:8px}
+    .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:#fff;height:34px;padding:0 12px;border-radius:10px;cursor:pointer;white-space:nowrap}
+    .btn.small{height:28px;padding:0 8px;border-radius:8px;font-size:12px}
+    .btn.icon{height:28px;width:28px;justify-content:center;padding:0}
+    .btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .btn.secondary{background:#f3f4f6}
+    .btn.danger{background:#fee2e2;border-color:#fecaca;color:#991b1b}
+    .input,textarea{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:#fff;font-size:14px}
+    textarea{resize:vertical}
+    .viewtabs{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+    .viewtabs .tabbtn{padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:#f3f4f6;cursor:pointer}
+    .viewtabs .tabbtn.active{background:#fff;border-color:#111}
+    .list{max-height:60vh;overflow:auto;display:flex;flex-direction:column;gap:10px;padding-right:6px;scrollbar-gutter:stable both-edges}
+    .item{border:1px solid var(--border);border-radius:14px;background:#fff;padding:12px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+    .item.active{border-color:#111}
+    .item .left{min-width:0;flex:1}
+    .badge{font-size:11px;padding:4px 10px;border-radius:999px;background:#f3f4f6;border:1px solid var(--border)}
+    .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .progress{height:8px;background:#eef2f7;border-radius:999px;overflow:hidden;margin-top:6px}
+    .progress>span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#60a5fa);width:0}
+    .rightCol{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:140px}
+    .rightCol .actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+    .kanban{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:900px){.kanban{grid-template-columns:repeat(4,1fr)}}
+    @media(min-width:1200px){.kanban{grid-template-columns:repeat(7,1fr)}}
+    .colhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .kcol{background:#fff;border:1px dashed var(--border);border-radius:14px;padding:10px;min-height:160px}
+    .kcard{border:1px solid var(--border);border-radius:12px;background:#fff;padding:10px;margin-bottom:8px;cursor:grab}
+    .krow{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+    .kname{font-weight:600;overflow:hidden;word-break:break-word;white-space:normal;line-height:1.3;color:#2563eb;text-decoration:none}
+    .hidden{display:none}
+    .float-toggle{position:fixed;right:16px;bottom:84px;z-index:50}
+    @media(min-width:900px){.float-toggle{bottom:16px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="grid">
+      <div class="card">
+        <div class="card-h">
+          <div class="title">项目列表</div>
+          <div class="row">
+            <button class="btn secondary" id="btnAdd">＋ 新增</button>
+            <button class="btn" id="btnViewList">📃 列表</button>
+            <button class="btn" id="btnViewKanban">🗂️ 看板</button>
+          </div>
+        </div>
+        <div class="card-c">
+          <div class="row" style="position:relative">
+            <span style="position:absolute;left:12px;top:10px;color:#9ca3af">🔎</span>
+            <input class="input" style="padding-left:32px" id="search" placeholder="搜索名称、负责人、标签…">
+          </div>
+          <div class="list" id="list"></div>
+          <div id="kanbanWrap" class="hidden">
+            <div class="kanban" id="kanban"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col" id="rightCol" style="gap:16px">
+        <div class="card">
+          <div class="card-h"><div class="title">项目详情</div></div>
+          <div class="card-c">
+            <div id="empty" class="muted">暂无选中项目</div>
+            <div id="detail" class="hidden">
+              <div class="col">
+                <label>项目名称<input class="input" id="f_name"></label>
+                <label>负责人<input class="input" id="f_owner"></label>
+                <label>模板类型<input class="input" id="f_template"></label>
+                <label>阶段<input class="input" id="f_stage"></label>
+                <label>截止日期<input class="input" type="date" id="f_due"></label>
+                <label>标签（逗号分隔）<input class="input" id="f_tags"></label>
+                <label>项目描述<textarea class="input" rows="4" id="f_desc"></textarea></label>
+                <label>完成度</label>
+                <div class="row">
+                  <input class="input" id="f_completion_num" type="number" min="0" max="100" style="width:84px">
+                  <input id="f_completion_rng" type="range" min="0" max="100" step="1" style="flex:1">
+                  <span class="badge" id="badgePct">0%</span>
+                </div>
+                <div class="progress"><span id="bar" style="width:0%"></span></div>
+                <label>风险（一行一项）<textarea class="input" rows="3" id="f_risks"></textarea></label>
+                <label>里程碑（一行一项）<textarea class="input" rows="3" id="f_milestones"></textarea></label>
+                <label>相关链接（标题|URL，每行一项）<textarea class="input" rows="3" id="f_links"></textarea></label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn primary float-toggle hidden" id="toggleDetails">🧩 显示详情面板</button>
+
+<script>
+/** Robust URL helpers **/
+function sanitizeUrl(u){
+  if(!u) return '';
+  u = String(u).replace(/\s+/g,''); // remove all whitespace accidentally pasted
+  if(!/^https?:\/\//i.test(u)){
+    // Add default protocol when missing, e.g., canva.com/abc
+    u = 'https://' + u.replace(/^\/+/,'');
+  }
+  try{ new URL(u); return u }catch{ return '' } // final validation
+}
+function parseLinkLine(line){
+  const s = String(line||'').trim();
+  if(!s) return null;
+  if(s.includes('|')){ const [label,url] = s.split('|'); return {label:(label||'Link').trim(), url:sanitizeUrl(url||'')}; }
+  return {label:'Link', url:sanitizeUrl(s)};
+}
+function primaryUrl(p){
+  if(!p || !Array.isArray(p.links) || !p.links.length) return '';
+  const first = sanitizeUrl(p.links[0]?.url||'');
+  return first;
+}
+
+const LS_KEY='uph_robust_links_v1';
+let projects=[]; let selectedId=null; let viewMode='list';
+
+function uid(){return Math.random().toString(36).slice(2,10)}
+function iso(d){return new Date(Date.now()+d*864e5).toISOString().slice(0,10)}
+function demo(){return[{id:uid(),name:'Leather Defect AI – Dual Beam Inkjet',owner:'PM: Rocky',stage:'Development',templateType:'Kanban-ProdOps',completion:42,dueDate:iso(30),tags:['AI','Vision','Manufacturing'],description:'Unified flow for scanning → defect analysis → dual-beam marking → QA.',risks:['Dust/static interference','Ink adhesion on wet-blue'],milestones:['Prototype M12 housing','POE harness','Dual-nozzle sync'],links:[{label:'Spec',url:'https://example.com/spec'}]},{id:uid(),name:'Elderly Vital Signs Radar – SNF Pilot',owner:'PM: Luoxi',stage:'Prototype',templateType:'Kanban-HealthTech',completion:65,dueDate:iso(45),tags:['Radar','Healthcare'],description:'Bedside mmWave radar vitals monitoring; SNF trial rooms 101-110.',risks:['False positives due to fan/AC','Caregiver adoption'],milestones:['Pilot consent forms','BLE gateway test'],links:[{label:'Trial Plan',url:'https://example.com/plan'}]}]}
+function load(){try{const raw=localStorage.getItem(LS_KEY); if(!raw) return demo(); const arr=JSON.parse(raw); return Array.isArray(arr)?arr:demo()}catch{return demo()}}
+function save(){localStorage.setItem(LS_KEY, JSON.stringify(projects))}
+
+const el=id=>document.getElementById(id);
+const list=el('list'), kanbanWrap=el('kanbanWrap'), kanban=el('kanban'), rightCol=el('rightCol'), toggleBtn=el('toggleDetails');
+
+function renderList(){
+  list.innerHTML='';
+  projects.forEach(p=>{
+    const row=document.createElement('div'); row.className='item'+(p.id===selectedId?' active':'');
+    const left=document.createElement('div'); left.className='left';
+    const a=document.createElement('a'); a.className='kname'; a.target='_blank'; a.rel='noopener';
+    const href=primaryUrl(p); a.href=href||'#'; a.textContent=p.name + (href?'':' (未设置链接)');
+    left.appendChild(a);
+    const meta=document.createElement('div'); meta.className='muted'; meta.textContent=`${p.owner||''} · ${p.stage||''} · ${p.templateType||''}`; left.appendChild(meta);
+    const prog=document.createElement('div'); prog.className='progress'; prog.innerHTML=`<span style="width:${p.completion}%"></span>`; left.appendChild(prog);
+    row.appendChild(left);
+    const right=document.createElement('div'); right.className='rightCol';
+    const pct=document.createElement('div'); pct.className='muted'; pct.textContent=p.completion+'%';
+    const actions=document.createElement('div'); actions.className='actions';
+    const edit=document.createElement('button'); edit.className='btn small'; edit.textContent='✏️ 编辑'; edit.onclick=()=>{ selectedId=p.id; showDetailsIfHidden(); renderAll(); };
+    const del=document.createElement('button'); del.className='btn small danger'; del.textContent='🗑️ 删除'; del.onclick=()=> deleteProject(p.id);
+    actions.appendChild(edit); actions.appendChild(del);
+    right.appendChild(pct); right.appendChild(actions);
+    row.appendChild(right);
+    list.appendChild(row);
+  });
+}
+
+function renderKanban(){
+  kanban.innerHTML='';
+  const stages=['Discovery','Design','Prototype','Development','Testing','Launch','Maintenance'];
+  stages.forEach(stage=>{
+    const wrap=document.createElement('div');
+    const head=document.createElement('div'); head.className='colhead'; head.innerHTML=`<strong>${stage}</strong><span class='muted'>${projects.filter(p=>p.stage===stage).length}</span>`;
+    const col=document.createElement('div'); col.className='kcol'; col.dataset.stage=stage;
+    col.addEventListener('dragover',e=>{e.preventDefault(); col.classList.add('over')});
+    col.addEventListener('dragleave',()=> col.classList.remove('over'));
+    col.addEventListener('drop',e=>{e.preventDefault(); col.classList.remove('over'); const id=e.dataTransfer.getData('text/plain'); moveToStage(id,stage)});
+
+    projects.filter(p=>p.stage===stage).forEach(p=>{
+      const card=document.createElement('div'); card.className='kcard'; card.draggable=true; card.dataset.id=p.id;
+      card.addEventListener('dragstart',e=>{ card.classList.add('drag'); e.dataTransfer.setData('text/plain',p.id) });
+      card.addEventListener('dragend',()=> card.classList.remove('drag'));
+      const top=document.createElement('div'); top.className='krow';
+      const link=document.createElement('a'); link.className='kname'; link.href=primaryUrl(p)||'#'; link.target='_blank'; link.textContent=p.name;
+      top.appendChild(link);
+      const acts=document.createElement('div'); acts.className='row';
+      const btnEdit=document.createElement('button'); btnEdit.className='btn icon'; btnEdit.title='编辑'; btnEdit.textContent='✏️'; btnEdit.onclick=()=>{ selectedId=p.id; showDetailsIfHidden(); renderAll(); };
+      const btnDel=document.createElement('button'); btnDel.className='btn icon danger'; btnDel.title='删除'; btnDel.textContent='🗑️'; btnDel.onclick=()=> deleteProject(p.id);
+      acts.appendChild(btnEdit); acts.appendChild(btnDel); top.appendChild(acts);
+      const prog=document.createElement('div'); prog.className='progress'; prog.innerHTML=`<span style="width:${p.completion}%"></span>`;
+      card.appendChild(top); card.appendChild(prog); col.appendChild(card);
+    });
+    wrap.appendChild(head); wrap.appendChild(col); kanban.appendChild(wrap);
+  });
+}
+
+function renderDetails(){
+  const p=projects.find(x=>x.id===selectedId);
+  if(!p){ el('empty').classList.remove('hidden'); el('detail').classList.add('hidden'); return; }
+  el('empty').classList.add('hidden'); el('detail').classList.remove('hidden');
+  el('f_name').value=p.name; el('f_owner').value=p.owner||''; el('f_template').value=p.templateType||''; el('f_stage').value=p.stage||''; el('f_due').value=p.dueDate||'';
+  el('f_tags').value=(p.tags||[]).join(', '); el('f_desc').value=p.description||'';
+  el('f_completion_num').value=p.completion; el('f_completion_rng').value=p.completion; el('badgePct').textContent=p.completion+'%'; el('bar').style.width=p.completion+'%';
+  el('f_risks').value=(p.risks||[]).join('\n'); el('f_milestones').value=(p.milestones||[]).join('\n');
+  el('f_links').value=(p.links||[]).map(l=>`${l.label||'Link'}|${l.url||'#'}`).join('\n');
+}
+
+function updateSelected(changes){ const idx=projects.findIndex(x=>x.id===selectedId); if(idx<0) return; projects[idx]=Object.assign({},projects[idx],changes); save(); renderList(); renderKanban(); renderDetails(); }
+
+function moveToStage(id,stage){ const idx=projects.findIndex(x=>x.id===id); if(idx<0) return; projects[idx].stage=stage; save(); renderKanban(); renderList(); if(selectedId===id){ el('f_stage').value=stage } }
+
+function deleteProject(id){ const p=projects.find(x=>x.id===id); if(!p) return; if(confirm('确认删除：'+p.name+'?')){ projects=projects.filter(x=>x.id!==p.id); if(selectedId===id){ selectedId=projects[0]?.id||null } save(); renderAll(); } }
+
+function activateKanban(){ viewMode='kanban'; el('btnViewKanban').classList.add('primary'); el('btnViewList').classList.remove('primary'); el('list').classList.add('hidden'); el('kanbanWrap').classList.remove('hidden'); hideDetailsForKanban(); }
+function activateList(){ viewMode='list'; el('btnViewList').classList.add('primary'); el('btnViewKanban').classList.remove('primary'); el('kanbanWrap').classList.add('hidden'); el('list').classList.remove('hidden'); el('rightCol').classList.remove('hidden'); el('toggleDetails').classList.add('hidden'); }
+
+function renderAll(){ renderList(); renderKanban(); renderDetails(); }
+function hideDetailsForKanban(){ el('rightCol').classList.add('hidden'); el('toggleDetails').classList.remove('hidden'); el('toggleDetails').textContent='🧩 显示详情面板'; }
+function showDetailsIfHidden(){ if(viewMode==='kanban' && el('rightCol').classList.contains('hidden')){ el('rightCol').classList.remove('hidden'); el('toggleDetails').textContent='🧩 隐藏详情面板'; } }
+
+window.addEventListener('DOMContentLoaded',()=>{
+  projects=load(); selectedId=projects[0]?.id||null; renderAll();
+  el('btnAdd').onclick=()=>{ const p={id:uid(),name:'New Project',owner:'PM: ',stage:'Discovery',templateType:'Kanban-Generic',completion:0,dueDate:new Date().toISOString().slice(0,10),tags:[],description:'',risks:[],milestones:[],links:[]}; projects=[p,...projects]; selectedId=p.id; save(); renderAll(); };
+  el('btnViewList').onclick=activateList; el('btnViewKanban').onclick=activateKanban;
+  el('toggleDetails').onclick=()=>{ const r=el('rightCol'); if(r.classList.contains('hidden')){ r.classList.remove('hidden'); el('toggleDetails').textContent='🧩 隐藏详情面板' } else { r.classList.add('hidden'); el('toggleDetails').textContent='🧩 显示详情面板' } };
+
+  // Fields
+  el('f_name').oninput=()=> updateSelected({name:el('f_name').value});
+  el('f_owner').oninput=()=> updateSelected({owner:el('f_owner').value});
+  el('f_template').oninput=()=> updateSelected({templateType:el('f_template').value});
+  el('f_stage').oninput=()=> updateSelected({stage:el('f_stage').value});
+  el('f_due').oninput=()=> updateSelected({dueDate:el('f_due').value});
+  el('f_tags').oninput=()=> updateSelected({tags:el('f_tags').value.split(',').map(s=>s.trim()).filter(Boolean)});
+  el('f_desc').oninput=()=> updateSelected({description:el('f_desc').value});
+  el('f_completion_num').oninput=()=>{ let v=Math.max(0,Math.min(100,+el('f_completion_num').value||0)); el('f_completion_num').value=v; el('f_completion_rng').value=v; el('badgePct').textContent=v+'%'; el('bar').style.width=v+'%'; updateSelected({completion:v}) };
+  el('f_completion_rng').oninput=()=>{ let v=Math.max(0,Math.min(100,+el('f_completion_rng').value||0)); el('f_completion_num').value=v; el('badgePct').textContent=v+'%'; el('bar').style.width=v+'%'; updateSelected({completion:v}) };
+  el('f_risks').oninput=()=> updateSelected({risks: el('f_risks').value.split(/\n+/).map(s=>s.trim()).filter(Boolean)});
+  el('f_milestones').oninput=()=> updateSelected({milestones: el('f_milestones').value.split(/\n+/).map(s=>s.trim()).filter(Boolean)});
+  el('f_links').oninput=()=>{ const links = el('f_links').value.split(/\n+/).map(parseLinkLine).filter(Boolean); updateSelected({links}) };
+});
+</script>
+</body>
+</html>
